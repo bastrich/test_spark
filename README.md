@@ -15,7 +15,8 @@ Classes:
        3. When 2nd iteration is finished, we can take a median value from current position of 1st iteration.
        4. IMPORTANT! - the 1st iteration must have the same +-1 resulting amount of steps as the 2nd.
     2. Solution of Task2c is probably a little bit simplified and doesn't cover all the cases.
-    3. Solutions with SQL implemented only for Task1 and Task2a. I'll try implement SQL-solution for other tasks, if I have enough time before before ending 24h-period. Generally, transforamtion "Spark Pipeline" <-> "SQL Query" is simple enough action.
-    4. Test more or less implemented only for Task1. I'll try to implement tests for other tasks, if I have enough time before before ending 24h-period.
-    5. In my opinion there are still a lot of non-optimal spark and spark-sql calls, but I ignore them right now in order to finish with all the tasks.
-    5. The whole structure of project (inputs, outputs, verifying, readability, codestyle etc.) is not very pleasant, but I'll try to fix that as well, If I have enough time.
+    3. Solution of Task1 likely doesn't cover all the cases as well. I think so based on my heuristic check as I didn't find enough time to check this exactly.
+    4. Solutions with SQL implemented only for Task1 and Task2a. I'll try implement SQL-solution for other tasks, if I have enough time before before ending 24h-period. Generally, transforamtion "Spark Pipeline" <-> "SQL Query" is simple enough action.
+    5. Test more or less implemented only for Task1. I'll try to implement tests for other tasks, if I have enough time before before ending 24h-period.
+    6. In my opinion there are still a lot of non-optimal spark and spark-sql calls, but I ignore them right now in order to finish with all the tasks.
+    7. The whole structure of project (inputs, outputs, verifying, readability, codestyle etc.) is not very pleasant, but I'll try to fix that as well, If I have enough time.
