@@ -4,7 +4,7 @@ Classes:
 * Task2a - Main-class with Task2:1st subparagraph
 * Task2aSql - Main-class with Task2:1st subparagraph - SQL-solution
 * Task2b - Main-class with Task2:2nd subparagraph
-* Task2c - Main-class with Task3:3rd subparagraph
+* Task2c - Main-class with Task2:3rd subparagraph
 * Task1Spec - Unit-test for Task1
 
 1. I never used sbt before, so here I just used IDEA generated sbt-project structure
