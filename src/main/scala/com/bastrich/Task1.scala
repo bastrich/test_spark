@@ -7,7 +7,7 @@ import org.apache.spark.sql.functions._
 object Task1 {
 
   def main(args: Array[String]): Unit = {
-    println("Hello from main of class")
+    println("Starting app...")
 
     val categoryWindow = Window.partitionBy("userId", "category").orderBy("eventTime")
     val sessionWindow = Window.partitionBy("userId", "category", "sessionId").orderBy("eventTime")
@@ -20,13 +20,14 @@ object Task1 {
       lit(0)
     ) > 300).cast("bigint")
 
-    val spark = SparkSession.builder.appName("Simple Application").master("local[*]").getOrCreate()
+    val spark = SparkSession.builder.appName("Task 1").master("local[*]").getOrCreate()
 
     val df = spark.read.format("csv")
       .option("header", "true")
       .option("inferSchema", "true")
       .option("timestampFormat", "yyyy-MM-dd HH:mm:ss")
       .load("data.csv")
+      //sessionId is <session number within given user and category>-<userId>-<category> (in order to distinct sessionIds globally)
       .withColumn("sessionId", concat(sum(sessionCol).over(categoryWindow), lit("-"), col("userId"), lit("-"), col("category")))
       .withColumn("sessionStartTime", min(col("eventTime")).over(sessionWindow))
       .withColumn("sessionEndTime", max(col("eventTime")).over(sessionWindow))

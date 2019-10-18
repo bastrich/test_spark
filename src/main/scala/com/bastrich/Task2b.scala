@@ -7,7 +7,7 @@ import org.apache.spark.sql.functions._
 object Task2b {
 
   def main(args: Array[String]): Unit = {
-    println("Hello from main of class")
+    println("Starting app...")
 
     val categoryWindow = Window.partitionBy("userId", "category").orderBy("eventTime")
     val sessionWindow = Window.partitionBy("userId", "category", "sessionId").orderBy("eventTime")
@@ -20,7 +20,7 @@ object Task2b {
       lit(0)
     ) > 300).cast("bigint")
 
-    val spark = SparkSession.builder.appName("Simple Application").master("local[*]").getOrCreate()
+    val spark = SparkSession.builder.appName("Task 2b").master("local[*]").getOrCreate()
 
     val df = spark.read.format("csv")
       .option("header", "true")

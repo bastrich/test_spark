@@ -7,9 +7,9 @@ import org.apache.spark.sql.functions._
 object Task2c {
 
   def main(args: Array[String]): Unit = {
-    println("Hello from main of class")
+    println("Starting app...")
 
-    val spark = SparkSession.builder.appName("Simple Application").master("local[*]").getOrCreate()
+    val spark = SparkSession.builder.appName("Task 2c").master("local[*]").getOrCreate()
 
     val df = spark.read.format("csv")
       .option("header", "true")
