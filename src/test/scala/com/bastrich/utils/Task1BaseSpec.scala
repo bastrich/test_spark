@@ -45,7 +45,7 @@ class Task1BaseSpec
       .option("header", "true")
       .option("inferSchema", "true")
       .option("timestampFormat", "yyyy-MM-dd HH:mm:ss")
-      .load(getClass.getResource("/test_data.csv").toURI.getPath)
+      .load(getClass.getResource("/test_data_1.csv").toURI.getPath)
     val actualResultDf = testSourceDf.transform(t)
 
     actualResultDf.show(30, false)

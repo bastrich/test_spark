@@ -1,54 +1,55 @@
 package com.bastrich
 
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.expressions.Window
-import org.apache.spark.sql.functions._
+import org.apache.spark.sql.DataFrame
 
-object Task2_2 {
+class Task2_2 {
 
-  def main(args: Array[String]): Unit = {
-    println("Starting app...")
+  def findSegmentsSizes(df: DataFrame): DataFrame = {
+    df.createOrReplaceTempView("events")
 
-    val categoryWindow = Window.partitionBy("userId", "category").orderBy("eventTime")
-    val sessionWindow = Window.partitionBy("userId", "category", "sessionId").orderBy("eventTime")
-      .rangeBetween(
-        Window.unboundedPreceding,
-        Window.unboundedFollowing
-      )
-    val sessionCol = (coalesce(
-      unix_timestamp(col("eventTime")) - unix_timestamp(lag(col("eventTime"), 1).over(categoryWindow)),
-      lit(0)
-    ) > 300).cast("bigint")
-
-    val spark = SparkSession.builder.appName("Task 2b").master("local[*]").getOrCreate()
-
-    val df = spark.read.format("csv")
-      .option("header", "true")
-      .option("inferSchema", "true")
-      .option("timestampFormat", "yyyy-MM-dd HH:mm:ss")
-      .load("data.csv")
-      .withColumn("sessionId", concat(sum(sessionCol).over(categoryWindow), lit("-"), col("userId"), lit("-"), col("category")))
-      .withColumn("sessionStartTime", min(col("eventTime")).over(sessionWindow))
-      .withColumn("sessionEndTime", max(col("eventTime")).over(sessionWindow))
-
-    df.show(30)
-
-    val durationSegmentWindow = Window.partitionBy("category", "segment")
-      .rangeBetween(
-        Window.unboundedPreceding,
-        Window.unboundedFollowing
-      )
-    val usersDistribution = df
-      .withColumn("sessionDurationMs", unix_timestamp(col("sessionEndTime")) - unix_timestamp(col("sessionStartTime")))
-      .select("category", "userId", "sessionDurationMs")
-      .dropDuplicates()
-      .withColumn("segment", when(col("sessionDurationMs") < 60, lit("less1m")).otherwise(when(col("sessionDurationMs") <= 300, lit("1mto5m")).otherwise(lit("more5m"))))
-      .withColumn("users_count", count("userId").over(durationSegmentWindow))
-      .select("category", "segment", "users_count")
-      .dropDuplicates()
-
-    usersDistribution.show(30)
-
-    spark.stop()
+    df.sqlContext.sql(
+      """
+        |with sessionEnrichedEvents as (select category,
+        |                                      product,
+        |                                      userId,
+        |                                      eventTime,
+        |                                      eventType,
+        |                                      sessionId,
+        |                                      min(eventTime)
+        |                                      OVER (PARTITION BY userId, category, sessionId ORDER BY eventTime RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) as sessionStartTime,
+        |                                      max(eventTime)
+        |                                      OVER (PARTITION BY userId, category, sessionId ORDER BY eventTime RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) as sessionEndTime
+        |                               from (select category,
+        |                                            product,
+        |                                            userId,
+        |                                            eventTime,
+        |                                            eventType,
+        |                                            concat((sum(cast((coalesce(unix_timestamp(eventTime) - unix_timestamp(
+        |                                                    lag(eventTime, 1) OVER (PARTITION BY userId, category ORDER BY eventTime)),
+        |                                                                       0) >
+        |                                                              43200) as bigint))
+        |                                                    OVER (PARTITION BY userId, category ORDER BY eventTime)), '-',
+        |                                                   userId, '-',
+        |                                                   category) as sessionId
+        |
+        |                                     from events))
+        |
+        |SELECT category, segment, count(userId) as uniqueUsersCount
+        |from (select distinct category,
+        |                      userId,
+        |                      CASE
+        |                          WHEN sessionDuration < 60 THEN 'lessThan1m'
+        |                          ELSE CASE
+        |                                   WHEN sessionDuration >= 60 AND sessionDuration <= 300 THEN 'from1mTo5m'
+        |                                   ELSE 'moreThan5m' END END as segment
+        |      from (select distinct category,
+        |                            userId,
+        |                            sessionId,
+        |                            unix_timestamp(sessionEndTime) - unix_timestamp(sessionStartTime) as sessionDuration
+        |            from sessionEnrichedEvents))
+        |group by category, segment
+        |
+        |""".stripMargin
+    )
   }
 }

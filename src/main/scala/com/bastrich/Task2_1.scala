@@ -9,10 +9,10 @@ class Task2_1 {
 
     df.sqlContext.sql(
       """
-        |select category, percentile_approx(sessionDurationMs, 0.5) as categoryMedianSessionDuration
+        |select category, percentile_approx(sessionDuration, 0.5) as categoryMedianSessionDurationSeconds
         |from (select distinct category,
         |                      sessionId,
-        |                      unix_timestamp(sessionEndTime) - unix_timestamp(sessionStartTime) as sessionDurationMs
+        |                      unix_timestamp(sessionEndTime) - unix_timestamp(sessionStartTime) as sessionDuration
         |      from (select category,
         |                   product,
         |                   userId,

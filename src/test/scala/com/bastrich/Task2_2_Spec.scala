@@ -1,28 +1,30 @@
 package com.bastrich
 
-import java.sql.Timestamp
 import java.text.SimpleDateFormat
 
 import com.bastrich.utils.SparkSessionTestWrapper
 import com.github.mrpowers.spark.fast.tests.DataFrameComparer
-import org.apache.spark.sql.types.{DoubleType, LongType, StringType, StructField, StructType, TimestampType}
-import org.apache.spark.sql.{DataFrame, Row}
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.types.{DoubleType, LongType, StringType, StructField, StructType}
 import org.scalatest.FunSpec
 
-class Task2_1_Spec
+class Task2_2_Spec
   extends FunSpec
       with SparkSessionTestWrapper
       with DataFrameComparer {
 
     it("test find category median sessions") {
-      val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-
       val expectedSchema = List(
         StructField("category", StringType),
-        StructField("categoryMedianSessionDurationSeconds", DoubleType)
+        StructField("segment", StringType, false),
+        StructField("uniqueUsersCount", LongType, false)
       )
       val expectedData = Seq(
-        Row("c1", 15d)
+        Row("c2", "moreThan5m", 1L),
+        Row("c1", "lessThan1m", 1L),
+        Row("c1", "from1mTo5m", 1L),
+        Row("c1", "moreThan5m", 2L),
+        Row("c2", "from1mTo5m", 1L)
       )
       val expectedResultDf = spark.createDataFrame(
         spark.sparkContext.parallelize(expectedData),
@@ -33,11 +35,11 @@ class Task2_1_Spec
         .option("header", "true")
         .option("inferSchema", "true")
         .option("timestampFormat", "yyyy-MM-dd HH:mm:ss")
-        .load(getClass.getResource("/test_data_1.csv").toURI.getPath)
+        .load(getClass.getResource("/test_data_2.csv").toURI.getPath)
 
-      val task2_1 = new Task2_1
+      val task2_2 = new Task2_2
 
-      val actualResultDf = testSourceDf.transform(task2_1.calculateCategoryMedianSessionDuration)
+      val actualResultDf = testSourceDf.transform(task2_2.findSegmentsSizes)
 
       actualResultDf.show(30, false)
       assertSmallDataFrameEquality(actualResultDf, expectedResultDf)
