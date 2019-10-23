@@ -1,4 +1,4 @@
-package com.bastrich
+package com.bastrich.utils
 
 import org.apache.spark.sql.SparkSession
 

@@ -1,19 +1,19 @@
-package com.bastrich
+package com.bastrich.utils
 
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
 
-import org.scalatest.FunSpec
 import com.github.mrpowers.spark.fast.tests.DataFrameComparer
-import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.{StringType, StructField, StructType, TimestampType}
+import org.apache.spark.sql.{DataFrame, Row}
+import org.scalatest.FunSpec
 
-class Task1Spec
+class Task1BaseSpec
   extends FunSpec
     with SparkSessionTestWrapper
     with DataFrameComparer {
 
-  it("test enriching with session ids") {
+  protected def testEnrichingWithSessions(t: DataFrame => DataFrame): Unit = {
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
 
     val expectedSchema = List(
@@ -27,10 +27,13 @@ class Task1Spec
       StructField("sessionEndTime", TimestampType)
     )
     val expectedData = Seq(
-      Row("c1", "p1", "u1",  new Timestamp(dateFormat.parse("2018-03-01 12:00:02").getTime), "e1", "0-u1-c1", new Timestamp(dateFormat.parse("2018-03-01 12:00:02").getTime), new Timestamp(dateFormat.parse("2018-03-01 12:01:40").getTime)),
+      Row("c1", "p1", "u1", new Timestamp(dateFormat.parse("2018-03-01 12:00:02").getTime), "e1", "0-u1-c1", new Timestamp(dateFormat.parse("2018-03-01 12:00:02").getTime), new Timestamp(dateFormat.parse("2018-03-01 12:01:40").getTime)),
       Row("c1", "p2", "u1", new Timestamp(dateFormat.parse("2018-03-01 12:01:40").getTime), "e2", "0-u1-c1", new Timestamp(dateFormat.parse("2018-03-01 12:00:02").getTime), new Timestamp(dateFormat.parse("2018-03-01 12:01:40").getTime)),
       Row("c1", "p2", "u1", new Timestamp(dateFormat.parse("2018-03-01 12:10:50").getTime), "e2", "1-u1-c1", new Timestamp(dateFormat.parse("2018-03-01 12:10:50").getTime), new Timestamp(dateFormat.parse("2018-03-01 12:11:05").getTime)),
       Row("c1", "p2", "u1", new Timestamp(dateFormat.parse("2018-03-01 12:11:05").getTime), "e3", "1-u1-c1", new Timestamp(dateFormat.parse("2018-03-01 12:10:50").getTime), new Timestamp(dateFormat.parse("2018-03-01 12:11:05").getTime)),
+      Row("c1", "p2", "u1", new Timestamp(dateFormat.parse("2018-03-01 13:10:50").getTime), "e2", "2-u1-c1", new Timestamp(dateFormat.parse("2018-03-01 13:10:50").getTime), new Timestamp(dateFormat.parse("2018-03-01 13:11:05").getTime)),
+      Row("c1", "p2", "u1", new Timestamp(dateFormat.parse("2018-03-01 13:11:05").getTime), "e3", "2-u1-c1", new Timestamp(dateFormat.parse("2018-03-01 13:10:50").getTime), new Timestamp(dateFormat.parse("2018-03-01 13:11:05").getTime)),
+      Row("c1", "p2", "u1", new Timestamp(dateFormat.parse("2018-03-01 13:11:05").getTime), "e1", "2-u1-c1", new Timestamp(dateFormat.parse("2018-03-01 13:10:50").getTime), new Timestamp(dateFormat.parse("2018-03-01 13:11:05").getTime)),
       Row("c1", "p2", "u2", new Timestamp(dateFormat.parse("2018-03-01 15:10:00").getTime), "e4", "0-u2-c1", new Timestamp(dateFormat.parse("2018-03-01 15:10:00").getTime), new Timestamp(dateFormat.parse("2018-03-01 15:10:00").getTime))
     )
     val expectedResultDf = spark.createDataFrame(
@@ -43,10 +46,9 @@ class Task1Spec
       .option("inferSchema", "true")
       .option("timestampFormat", "yyyy-MM-dd HH:mm:ss")
       .load(getClass.getResource("/test_data.csv").toURI.getPath)
-    val task1 = new Task1
-    val actualResultDf = testSourceDf.transform(task1.enrichWithSessionIds)
+    val actualResultDf = testSourceDf.transform(t)
 
-    actualResultDf.show(30)
+    actualResultDf.show(30, false)
     assertSmallDataFrameEquality(actualResultDf, expectedResultDf)
   }
 }
