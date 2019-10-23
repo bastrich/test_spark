@@ -11,7 +11,7 @@ class Task2_3_Spec
       with SparkSessionTestWrapper
       with DataFrameComparer {
 
-    it("test find category median sessions") {
+    it("test find category top products by spending time") {
       val expectedSchema = List(
         StructField("category", StringType),
         StructField("product", StringType),

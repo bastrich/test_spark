@@ -13,7 +13,7 @@ class Task2_2_Spec
       with SparkSessionTestWrapper
       with DataFrameComparer {
 
-    it("test find category median sessions") {
+    it("test find user segments sizes") {
       val expectedSchema = List(
         StructField("category", StringType),
         StructField("segment", StringType, false),
@@ -39,7 +39,7 @@ class Task2_2_Spec
 
       val task2_2 = new Task2_2
 
-      val actualResultDf = testSourceDf.transform(task2_2.findSegmentsSizes)
+      val actualResultDf = task2_2.findSegmentsSizes(testSourceDf)
 
       actualResultDf.show(30, false)
       assertSmallDataFrameEquality(actualResultDf, expectedResultDf)

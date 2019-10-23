@@ -7,34 +7,44 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Row}
 
 class Task1_2 {
-  def enrichWithSessionIds(df: DataFrame): DataFrame = {
+  def enrichWithSessionIds(df: DataFrame, sessionExpirationSeconds: Int = 300): DataFrame = {
     df.createOrReplaceTempView("events")
 
     def findSession = (sessions: Map[Timestamp, String], eventTime: Timestamp) => {
       sessions.get(eventTime)
     }
 
-    df.sparkSession.udf.register("sessions", new Sessions)
+    df.sparkSession.udf.register("sessions", new Sessions(sessionExpirationSeconds))
     df.sparkSession.udf.register("findSession", findSession)
 
     df.sqlContext.sql(
       """
-        |WITH sessionIds as (select events.category,
+        |WITH sessionAggs AS (SELECT category,
+        |                            userId,
+        |                            sessions(eventTime) as sessions
+        |                     FROM (select * from events order by eventTime)
+        |                     GROUP BY category, userId),
+        |
+        |     sessionIds AS (SELECT events.category,
         |                           events.product,
         |                           events.userId,
         |                           events.eventTime,
         |                           events.eventType,
         |                           findSession(sessionAggs.sessions, events.eventTime) as sessionId
-        |                    from events
-        |                             join
-        |                         (select category,
-        |                                 userId,
-        |                                 sessions(eventTime) as sessions
-        |                          from (select * from events order by eventTime)
-        |                          group by category, userId) sessionAggs
-        |                         ON events.category == sessionAggs.category and events.userId == sessionAggs.userId)
+        |                    FROM events
+        |                             JOIN
+        |                         sessionAggs
+        |                         ON events.category == sessionAggs.category AND events.userId == sessionAggs.userId),
         |
-        |select sessionIds.category,
+        |     minMaxSessionTimes AS (SELECT category,
+        |                                   userId,
+        |                                   sessionId,
+        |                                   min(eventTime) as sessionStartTime,
+        |                                   max(eventTime) as sessionEndTime
+        |                            FROM sessionIds
+        |                            GROUP BY category, userId, sessionId)
+        |
+        |SELECT sessionIds.category,
         |       sessionIds.product,
         |       sessionIds.userId,
         |       sessionIds.eventTime,
@@ -42,18 +52,16 @@ class Task1_2 {
         |       concat(sessionIds.sessionId, '-', sessionIds.userId, '-', sessionIds.category) as sessionId,
         |       sessionStartTime,
         |       sessionEndTime
-        |from sessionIds
-        |         join
-        |     (select category, userId, sessionId, min(eventTime) as sessionStartTime, max(eventTime) as sessionEndTime
-        |      from sessionIds
-        |      group by category, userId, sessionId) minMaxSessionTimes
-        |     ON sessionIds.category = minMaxSessionTimes.category and sessionIds.userId = minMaxSessionTimes.userId and
+        |FROM sessionIds
+        |         JOIN
+        |     minMaxSessionTimes
+        |     ON sessionIds.category = minMaxSessionTimes.category AND sessionIds.userId = minMaxSessionTimes.userId AND
         |        sessionIds.sessionId = minMaxSessionTimes.sessionId
         |""".stripMargin)
   }
 }
 
-class Sessions extends UserDefinedAggregateFunction {
+class Sessions(val sessionExpirationSeconds: Int) extends UserDefinedAggregateFunction {
   override def inputSchema: org.apache.spark.sql.types.StructType =
     StructType(StructField("value", TimestampType) :: Nil)
 
@@ -81,7 +89,7 @@ class Sessions extends UserDefinedAggregateFunction {
     }
 
     val currentSessionId = buffer.getAs[Long](0)
-    if (timeDiff <= 300 * 1000) {
+    if (timeDiff <= sessionExpirationSeconds * 1000) {
       buffer(2) = buffer.getAs[Map[Timestamp, String]](2) + (input.getAs[Timestamp](0) -> currentSessionId.toString)
     } else {
       buffer(2) = buffer.getAs[Map[Timestamp, String]](2) + (input.getAs[Timestamp](0) -> (currentSessionId + 1).toString)
@@ -92,7 +100,6 @@ class Sessions extends UserDefinedAggregateFunction {
   }
 
   override def merge(buffer1: MutableAggregationBuffer, buffer2: Row): Unit = {
-
     val timeDiff = if (buffer1.getAs[Timestamp](1).getTime == 0) {
       0
     } else {
@@ -100,7 +107,7 @@ class Sessions extends UserDefinedAggregateFunction {
     }
 
     val currentSessionId = buffer1.getAs[Long](0)
-    if (timeDiff <= 300 * 1000) {
+    if (timeDiff <= sessionExpirationSeconds * 1000) {
       buffer1(2) = buffer1.getAs[Map[Timestamp, String]](2) + (buffer2.getAs[Timestamp](1) -> currentSessionId.toString)
     } else {
       buffer1(2) = buffer1.getAs[Map[Timestamp, String]](2) + (buffer2.getAs[Timestamp](1) -> (currentSessionId + 1).toString)

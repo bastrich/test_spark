@@ -13,7 +13,7 @@ class Task1BaseSpec
     with SparkSessionTestWrapper
     with DataFrameComparer {
 
-  protected def testEnrichingWithSessions(t: DataFrame => DataFrame): Unit = {
+  protected def testEnrichingWithSessions(t: (DataFrame, Int) => DataFrame): Unit = {
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
 
     val expectedSchema = List(
@@ -46,7 +46,8 @@ class Task1BaseSpec
       .option("inferSchema", "true")
       .option("timestampFormat", "yyyy-MM-dd HH:mm:ss")
       .load(getClass.getResource("/test_data_1.csv").toURI.getPath)
-    val actualResultDf = testSourceDf.transform(t)
+
+    val actualResultDf = t(testSourceDf, 300)
 
     actualResultDf.show(30, false)
     assertSmallDataFrameEquality(actualResultDf, expectedResultDf)

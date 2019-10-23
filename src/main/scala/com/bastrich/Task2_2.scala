@@ -4,11 +4,11 @@ import org.apache.spark.sql.DataFrame
 
 class Task2_2 {
 
-  def findSegmentsSizes(df: DataFrame): DataFrame = {
+  def findSegmentsSizes(df: DataFrame, sessionExpirationSeconds: Int = 12 * 60 * 60): DataFrame = {
     df.createOrReplaceTempView("events")
 
     df.sqlContext.sql(
-      """
+      s"""
         |with sessionEnrichedEvents as (select category,
         |                                      product,
         |                                      userId,
@@ -27,7 +27,7 @@ class Task2_2 {
         |                                            concat((sum(cast((coalesce(unix_timestamp(eventTime) - unix_timestamp(
         |                                                    lag(eventTime, 1) OVER (PARTITION BY userId, category ORDER BY eventTime)),
         |                                                                       0) >
-        |                                                              43200) as bigint))
+        |                                                              $sessionExpirationSeconds) as bigint))
         |                                                    OVER (PARTITION BY userId, category ORDER BY eventTime)), '-',
         |                                                   userId, '-',
         |                                                   category) as sessionId

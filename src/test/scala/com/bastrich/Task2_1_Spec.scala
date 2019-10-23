@@ -37,7 +37,7 @@ class Task2_1_Spec
 
       val task2_1 = new Task2_1
 
-      val actualResultDf = testSourceDf.transform(task2_1.calculateCategoryMedianSessionDuration)
+      val actualResultDf = task2_1.calculateCategoryMedianSessionDuration(testSourceDf, 300)
 
       actualResultDf.show(30, false)
       assertSmallDataFrameEquality(actualResultDf, expectedResultDf)
