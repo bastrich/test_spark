@@ -4,7 +4,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions._
 
-object Task2c {
+object Task2_3 {
 
   def main(args: Array[String]): Unit = {
     println("Starting app...")

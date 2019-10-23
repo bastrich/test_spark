@@ -14,7 +14,6 @@ class Task1_2 {
       sessions.get(eventTime)
     }
 
-
     df.sparkSession.udf.register("sessions", new Sessions)
     df.sparkSession.udf.register("findSession", findSession)
 
@@ -55,30 +54,25 @@ class Task1_2 {
 }
 
 class Sessions extends UserDefinedAggregateFunction {
-  // This is the input fields for your aggregate function.
   override def inputSchema: org.apache.spark.sql.types.StructType =
     StructType(StructField("value", TimestampType) :: Nil)
 
-  // This is the internal fields you keep for computing your aggregate.
   override def bufferSchema: StructType = StructType(
     StructField("currentSessionId", LongType) ::
       StructField("pastTimestamp", TimestampType) ::
       StructField("sessions", MapType(TimestampType, StringType)) :: Nil
   )
 
-  // This is the output type of your aggregatation function.
   override def dataType: DataType = MapType(TimestampType, StringType)
 
   override def deterministic: Boolean = true
 
-  // This is the initial value for your buffer schema.
   override def initialize(buffer: MutableAggregationBuffer): Unit = {
     buffer(0) = 0L
     buffer(1) = new Timestamp(0)
     buffer(2) = Map[Timestamp, String]()
   }
 
-  // This is how to update your buffer schema given an input.
   override def update(buffer: MutableAggregationBuffer, input: Row): Unit = {
     val timeDiff = if (buffer.getAs[Timestamp](1).getTime == 0) {
       0
@@ -97,7 +91,6 @@ class Sessions extends UserDefinedAggregateFunction {
     buffer(1) = input.getAs[Timestamp](0)
   }
 
-  // This is how to merge two objects with the bufferSchema type.
   override def merge(buffer1: MutableAggregationBuffer, buffer2: Row): Unit = {
 
     val timeDiff = if (buffer1.getAs[Timestamp](1).getTime == 0) {
@@ -117,7 +110,6 @@ class Sessions extends UserDefinedAggregateFunction {
     buffer1(1) = buffer2.getAs[Timestamp](1)
   }
 
-  // This is where you output the final value, given the final value of your bufferSchema.
   override def evaluate(buffer: Row): Any = {
     buffer.getAs[Map[Timestamp, String]](2)
   }
