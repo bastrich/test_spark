@@ -21,6 +21,7 @@ class Task2_1 {
         |                                  '-',
         |                                  category) as sessionId
         |                    from events),
+        |
         |     sessionPeriods AS (SELECT category,
         |                               product,
         |                               userId,
