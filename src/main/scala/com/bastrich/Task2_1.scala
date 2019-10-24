@@ -1,10 +1,15 @@
 package com.bastrich
 
+import com.bastrich.utils.Utils.verifyScheme
 import org.apache.spark.sql.DataFrame
 
 class Task2_1 {
 
   def calculateCategoryMedianSessionDuration(df: DataFrame, sessionExpirationSeconds: Int = 300): DataFrame = {
+    if (!verifyScheme(df.schema)) {
+      throw new Exception("Wrong input data scheme")
+    }
+
     df.createOrReplaceTempView("events")
 
     df.sqlContext.sql(

@@ -1,12 +1,15 @@
 package com.bastrich
 
-import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.expressions.Window
-import org.apache.spark.sql.functions._
+import com.bastrich.utils.Utils.verifyScheme
+import org.apache.spark.sql.DataFrame
 
 class Task2_3 {
 
   def findCategoryProductsTop(df: DataFrame): DataFrame = {
+    if (!verifyScheme(df.schema)) {
+      throw new Exception("Wrong input data scheme")
+    }
+
     df.createOrReplaceTempView("events")
 
     df.sqlContext.sql(

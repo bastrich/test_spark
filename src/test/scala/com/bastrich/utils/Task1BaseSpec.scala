@@ -2,16 +2,11 @@ package com.bastrich.utils
 
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
-
-import com.github.mrpowers.spark.fast.tests.DataFrameComparer
 import org.apache.spark.sql.types.{StringType, StructField, StructType, TimestampType}
 import org.apache.spark.sql.{DataFrame, Row}
-import org.scalatest.FunSpec
 
 class Task1BaseSpec
-  extends FunSpec
-    with SparkSessionTestWrapper
-    with DataFrameComparer {
+  extends BaseSpec {
 
   protected def testEnrichingWithSessions(t: (DataFrame, Int) => DataFrame): Unit = {
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")

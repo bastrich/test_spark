@@ -9,4 +9,9 @@ class Task1_1_Spec
     val task = new Task1_1
     testEnrichingWithSessions(task.enrichWithSessionIds)
   }
+
+  it("test wrong input data schema") {
+    val task = new Task1_1
+    testWrongInputSchema(task.enrichWithSessionIds)
+  }
 }

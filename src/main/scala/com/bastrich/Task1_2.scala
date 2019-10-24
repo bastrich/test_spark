@@ -2,12 +2,17 @@ package com.bastrich
 
 import java.sql.Timestamp
 
+import com.bastrich.utils.Utils.verifyScheme
 import org.apache.spark.sql.expressions.{MutableAggregationBuffer, UserDefinedAggregateFunction}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Row}
 
 class Task1_2 {
   def enrichWithSessionIds(df: DataFrame, sessionExpirationSeconds: Int = 300): DataFrame = {
+    if (!verifyScheme(df.schema)) {
+      throw new Exception("Wrong input data scheme")
+    }
+
     df.createOrReplaceTempView("events")
 
     def findSession = (sessions: Map[Timestamp, String], eventTime: Timestamp) => {

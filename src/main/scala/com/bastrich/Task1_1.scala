@@ -1,9 +1,14 @@
 package com.bastrich
 
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import com.bastrich.utils.Utils.verifyScheme
+import org.apache.spark.sql.DataFrame
 
 class Task1_1 {
   def enrichWithSessionIds(df: DataFrame, sessionExpirationSeconds: Int = 300): DataFrame = {
+    if (!verifyScheme(df.schema)) {
+      throw new Exception("Wrong input data scheme")
+    }
+
     df.createOrReplaceTempView("events")
 
     df.sqlContext.sql(
